@@ -581,8 +581,8 @@ router.get("/video/:id", async (req, res) => {
 });
 
 /**
- * Admin: list train_video + train_sample + view for the signed-in user so the app can show
- * which taxonomy combos already have Modal pose landmarks (status completed + frames).
+ * Admin: list global train_video + train_sample + view coverage so UI shows what the
+ * company model has already been trained on (not only one admin's uploads).
  */
 router.get("/admin/pose-landmarks-coverage", async (req, res) => {
   try {
@@ -610,8 +610,7 @@ router.get("/admin/pose-landmarks-coverage", async (req, res) => {
       .innerJoin(
         trainVideoViewProfile,
         eq(trainVideo.id, trainVideoViewProfile.trainVideoId)
-      )
-      .where(eq(trainVideo.userId, userId));
+      );
 
     type RowOut = {
       sampleId: string;
@@ -656,8 +655,28 @@ router.get("/admin/pose-landmarks-coverage", async (req, res) => {
       }
     }
 
-    const trainedRows = coverage
-      .filter((c) => c.poseLandmarksReady)
+    // Return one row per trained combo (category + stroke + skill + view), latest first.
+    const comboLatest = new Map<string, RowOut>();
+    const comboSampleCounts = new Map<string, number>();
+    for (const row of coverage) {
+      if (!row.poseLandmarksReady) continue;
+      const key = `${row.category}|${row.strokePreset}|${row.skillLevel}|${row.viewProfile}`;
+      comboSampleCounts.set(key, (comboSampleCounts.get(key) ?? 0) + 1);
+      const prev = comboLatest.get(key);
+      if (
+        !prev ||
+        String(row.updatedAt ?? "").localeCompare(String(prev.updatedAt ?? "")) > 0
+      ) {
+        comboLatest.set(key, row);
+      }
+    }
+
+    const trainedRows = Array.from(comboLatest.entries())
+      .map(([key, row]) => ({
+        ...row,
+        // Keep payload self-descriptive in UI: how many completed samples feed this combo.
+        sampleCount: comboSampleCounts.get(key) ?? 1,
+      }))
       .sort((a, b) =>
         String(b.updatedAt ?? "").localeCompare(String(a.updatedAt ?? ""))
       );
