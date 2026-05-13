@@ -449,6 +449,38 @@ router.post("/basic", async (req, res) => {
       areaLocation = existingProfile?.areaLocation ?? null;
     }
 
+    const includePhone = Object.prototype.hasOwnProperty.call(body, "phone");
+    let phone: string | null;
+    if (includePhone) {
+      const raw = body.phone;
+      phone = typeof raw === "string" && raw.trim().length > 0 ? raw.trim().slice(0, 40) : null;
+    } else {
+      phone = existingProfile?.phone ?? null;
+    }
+
+    const includeBirthDate = Object.prototype.hasOwnProperty.call(body, "birthDate");
+    let birthDate: string | null;
+    if (includeBirthDate) {
+      const raw = body.birthDate;
+      if (raw === null || raw === "") {
+        birthDate = null;
+      } else if (typeof raw === "string" && /^\d{4}-\d{2}-\d{2}$/.test(raw.trim())) {
+        birthDate = raw.trim();
+      } else {
+        return res.status(400).json({ error: "birthDate must be YYYY-MM-DD or null." });
+      }
+    } else {
+      birthDate = existingProfile?.birthDate ?? null;
+    }
+
+    const includeEmail = Object.prototype.hasOwnProperty.call(body, "email");
+    let emailUpdate: string | null | undefined;
+    if (includeEmail) {
+      const raw = body.email;
+      emailUpdate =
+        typeof raw === "string" && raw.includes("@") ? raw.trim().slice(0, 320) : null;
+    }
+
     const now = new Date();
 
     await db
@@ -458,6 +490,8 @@ router.post("/basic", async (req, res) => {
         username,
         gender,
         areaLocation,
+        phone,
+        birthDate,
         createdAt: now,
         updatedAt: now,
       })
@@ -467,12 +501,18 @@ router.post("/basic", async (req, res) => {
           username,
           gender,
           areaLocation,
+          phone,
+          birthDate,
           updatedAt: now,
         },
       });
 
     if (name) {
       await db.update(user).set({ name, updatedAt: now }).where(eq(user.id, userId));
+    }
+
+    if (includeEmail && emailUpdate) {
+      await db.update(user).set({ email: emailUpdate, updatedAt: now }).where(eq(user.id, userId));
     }
 
     return res.json({ ok: true });

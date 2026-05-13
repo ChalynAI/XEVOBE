@@ -176,6 +176,20 @@
       "when": 1776700000000,
       "tag": "0024_train_stroke_preset_bandeja",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1778690349716,
+      "tag": "0025_user_profile_phone",
+      "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1778692484011,
+      "tag": "0026_user_profile_birth_date",
+      "breakpoints": true
     }
   ]
 }

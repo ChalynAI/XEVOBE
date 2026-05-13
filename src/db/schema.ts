@@ -214,8 +214,12 @@ export const userProfile = pgTable("user_profile", {
     .primaryKey()
     .references(() => user.id, { onDelete: "cascade" }),
   username: text("username"),
+  /** Optional phone for account settings (not shown on public directory). */
+  phone: text("phone"),
   /** City or region line; shown to linked coaches only (coach-students API), not on public directory. */
   areaLocation: text("areaLocation"),
+  /** ISO `YYYY-MM-DD` from profile settings (optional). */
+  birthDate: text("birthDate"),
   coachStudentRole: text("coachStudentRole").default("none"),
   gender: text("gender"),
   dominantHand: text("dominantHand"),
